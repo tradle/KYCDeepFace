@@ -1,1 +1,1 @@
-** Detection & recognition pretrained models
+**Detection & recognition pretrained models**
