@@ -23,8 +23,9 @@ Face alignment for cropped faces with landmarks.
 Face recognition pipeline with model trained on large dataset.
 
 **TODOs:**
-- [ ] Pretrained model
-- [ ] Recognition pipeline
+- [X] Pretrained model
+- [X] Recognition pipeline
+- [X] Model conversion to ONNX for inference
 - [ ] NIST ranking
 - [ ] Evaluation
 - [ ] Documentation
