@@ -7,7 +7,7 @@ An ultra light face detector refering to [Link](https://github.com/Linzaer/Ultra
 **TODOs:**
 - [X] Detection pipeline
 - [X] Model conversion to ONNX for inference
-- [X] Add model download link & script to model zoos
+- [ ] Add model download link & script to model zoos
 - [ ] Evaluation
 - [ ] Documentation
 ## Face Alignment
