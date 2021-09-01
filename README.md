@@ -5,7 +5,9 @@ KYC face matching project.
 An ultra light face detector refering to [Link](https://github.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB)
 
 **TODOs:**
-- [x] Detection pipeline
+- [X] Detection pipeline
+- [X] Model conversion to ONNX for inference
+- [X] Add model download link & script to model zoos
 - [ ] Evaluation
 - [ ] Documentation
 ## Face Alignment
