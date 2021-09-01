@@ -15,7 +15,7 @@ An ultra light face detector refering to [Link](https://github.com/Linzaer/Ultra
 Face alignment for cropped faces with landmarks.
 
 **TODOs:**
-- [ ] Alignment pipeline
+- [X] Alignment pipeline
 - [ ] Documentation
 - [ ] Upgrade with SDUNets
 ## Face Recognition
