@@ -5,7 +5,9 @@ KYC face matching project.
 An ultra light face detector refering to [Link](https://github.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB)
 
 **TODOs:**
-- [ ] Detection pipeline
+- [X] Detection pipeline
+- [X] Model conversion to ONNX for inference
+- [ ] Add model download link & script to model zoos
 - [ ] Evaluation
 - [ ] Documentation
 ## Face Alignment
@@ -13,7 +15,7 @@ An ultra light face detector refering to [Link](https://github.com/Linzaer/Ultra
 Face alignment for cropped faces with landmarks.
 
 **TODOs:**
-- [ ] Alignment pipeline
+- [X] Alignment pipeline
 - [ ] Documentation
 - [ ] Upgrade with SDUNets
 ## Face Recognition
@@ -21,8 +23,9 @@ Face alignment for cropped faces with landmarks.
 Face recognition pipeline with model trained on large dataset.
 
 **TODOs:**
-- [ ] Pretrained model
-- [ ] Recognition pipeline
+- [X] Pretrained model
+- [X] Recognition pipeline
+- [X] Model conversion to ONNX for inference
 - [ ] NIST ranking
 - [ ] Evaluation
 - [ ] Documentation
