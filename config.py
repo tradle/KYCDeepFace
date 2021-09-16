@@ -2,7 +2,7 @@
 # @Author: yirui
 # @Date:   2021-09-01 17:39:28
 # @Last Modified by:   yirui
-# @Last Modified time: 2021-09-01 17:40:50
+# @Last Modified time: 2021-09-16 18:26:11
 
 
 TEST_DEVICE = 'cpu' # cpu/cuda:0
@@ -42,6 +42,8 @@ MASKED_REGISTERED_NAME_LIST = "./static/masked/name_list.json"
 
 NORMAL_RECOGNITION_THRESHOLD = 0.39 # recognition thredhold for clean face, 0-1
 MASKED_RECOGNITION_THRESHOLD = 0.397 # recognition thredhold for masked face: 0-1
+
+VERIFICATION_TRHESHOLD = 0.37
 
 SHOW_DETECTION_SIZE = False # show detection bounding box sizes
 
