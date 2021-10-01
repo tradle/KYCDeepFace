@@ -9,13 +9,12 @@ import os
 import torch.utils.data
 from core import model
 from dataloader.LFW_loader import LFW
-from config import LFW_DATA_DIR
+from training_config import LFW_DATA_DIR
 import argparse
 
 def parseList(root):
     with open(os.path.join(root, 'pairs.txt')) as f:
         pairs = f.read().splitlines()[1:]
-    folder_name = 'lfw-112X96'
     nameLs = []
     nameRs = []
     folds = []
@@ -23,13 +22,13 @@ def parseList(root):
     for i, p in enumerate(pairs):
         p = p.split('\t')
         if len(p) == 3:
-            nameL = os.path.join(root, folder_name, p[0], p[0] + '_' + '{:04}.jpg'.format(int(p[1])))
-            nameR = os.path.join(root, folder_name, p[0], p[0] + '_' + '{:04}.jpg'.format(int(p[2])))
+            nameL = os.path.join(root, p[0], p[0] + '_' + '{:04}.jpg'.format(int(p[1])))
+            nameR = os.path.join(root, p[0], p[0] + '_' + '{:04}.jpg'.format(int(p[2])))
             fold = i // 600
             flag = 1
         elif len(p) == 4:
-            nameL = os.path.join(root, folder_name, p[0], p[0] + '_' + '{:04}.jpg'.format(int(p[1])))
-            nameR = os.path.join(root, folder_name, p[2], p[2] + '_' + '{:04}.jpg'.format(int(p[3])))
+            nameL = os.path.join(root, p[0], p[0] + '_' + '{:04}.jpg'.format(int(p[1])))
+            nameR = os.path.join(root, p[2], p[2] + '_' + '{:04}.jpg'.format(int(p[3])))
             fold = i // 600
             flag = -1
         nameLs.append(nameL)
