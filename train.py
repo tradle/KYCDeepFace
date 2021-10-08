@@ -108,7 +108,7 @@ best_acc = 0.0
 best_epoch = 0
 
 # DATA_SIZE = 13309 # for testing only
-DATA_SIZE = 17091657
+DATA_SIZE = len(trainset)   
 
 num_batches = math.ceil(DATA_SIZE / BATCH_SIZE)
 
