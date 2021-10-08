@@ -12,9 +12,12 @@ import torch
 import time
 import datetime
 from os import path as osp
-from multiprocessing import Pool
+from multiprocessing import Pool, current_process
 import math
 from sklearn.preprocessing import LabelEncoder
+
+def print_t(text, flush=False, end='\n'):
+    print(f"{time.strftime('%H:%M:%S')} INFO:  {text}", flush=flush, end=end)
 
 class GLINT_Face(object):
     def __init__(self, data_folder):
@@ -24,57 +27,45 @@ class GLINT_Face(object):
         # _ids = _ids[:200] # for testing only
         image_list = []
         label_list = []
-        
-        exp = 0
-        exp_str = '00:00:00'
-        # for i, _id in enumerate(_ids):
-        #     t0 = time.time()
-        #     if i!=len(_ids)-1:
-        #         print(f"INFO:  loading {i}/{len(_ids)}, expected to be finished after {exp_str}", flush=True, end='\r')
-        #     else:
-        #         print(f"INFO:  loading {i}/{len(_ids)}, expected to be finished after {exp_str}")    
-        #     for fn in os.listdir(osp.join(self.data_folder, _id)):
-        #         image_list.append(osp.join(self.data_folder, _id, fn))
-        #         label_list.append(i)
-                
-        #     if i%1000 == 0:
-        #       t1 = time.time()
-        #       exp = (t1-t0)*(len(_ids)-i)
-        #       exp_str = str(datetime.timedelta(seconds=exp))
-        
+        start = time.time()
+
         num_process = 20
-        print(f'INFO:  init {num_process} workers for data indexing')
+
+        print_t(f'init {num_process} workers for data indexing of {len(_ids)} images')
         chunk_size = math.floor(len(_ids)/num_process)
         with Pool(processes = num_process) as p:
             data = p.map(self.__prepare__, [_ids[x:x+chunk_size] for x in range(0, len(_ids), chunk_size)])
-        
-        print('\nINFO:  joining pool result ...')
+
+        print('')
+        print_t('joining pool result ...')
         temp = []
         for item in data:
             temp.extend(item)
-        zip(*[[1,2], [3,4], [5,6]])
+        # zip(*[[1,2], [3,4], [5,6]])
         self.image_list, self.label_list = zip(*temp)
         le = LabelEncoder()
         self.label_list = le.fit_transform(self.label_list)
         # self.label_list = label_list
         self.class_nums = len(np.unique(self.label_list))
-        
-        print(f'Data Summary:  {len(self.image_list)} data indexed with {self.class_nums} identities')
+
+        print_t(f'Data Summary: {len(self.image_list)} data indexed with {self.class_nums} identities')
 
     def __prepare__(self, _ids):
         output = []
-        exp = 0
-        exp_str = '00:00:00'
+        num_items = len(_ids)
+        previous_percent = 0
+        is_first_thread = current_process().name == 'ForkPoolWorker-1'
         for i, _id in enumerate(_ids):
-            t0 = time.time()
-            # print(f"INFO:  loading {i}/{len(_ids)}, expected to be finished after {exp_str}", flush=True, end='\x1b[1K\r')
-            print(f"INFO:  loading {i}/{len(_ids)}, expected to be finished after {exp_str}", flush=True, end='\r')
+            # end = '\x1b[1K\r' # Windows
+            end = '\r' # Linux / Mac
+            # print(f"INFO:  loading {i}/{len(_ids)}, expected to be finished after {exp_str}", flush=True, end=end)
             for fn in os.listdir(osp.join(self.data_folder, _id)):
                 output.append([osp.join(self.data_folder, _id, fn), _id])
-            if i%1000 == 0:
-                t1 = time.time()
-                exp = (t1-t0)*(len(_ids)-i)
-                exp_str = str(datetime.timedelta(seconds=exp))
+            if is_first_thread:
+                percent = math.floor(100/num_items*i)
+                if percent != previous_percent:
+                    previous_percent = percent
+                    print_t(f"loading (~{percent}%)", flush=True, end=end)
         return output
 
     def __getitem__(self, index):
