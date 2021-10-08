@@ -20,7 +20,6 @@ import time
 from lfw_eval import parseList, evaluation_10_fold
 import numpy as np
 import scipy.io
-import time
 import math
 
 print('INFO:  init gpu')
@@ -113,6 +112,23 @@ DATA_SIZE = 17091657
 
 num_batches = math.ceil(DATA_SIZE / BATCH_SIZE)
 
+def output_process (since, previous, epoch, i, duration_enumerate):
+    now = time.time()
+    duration_total = now - since
+    duration_total_str = str(datetime.timedelta(seconds=duration_total))
+    duration_batch = now - previous
+    duration_batch_str = str(datetime.timedelta(seconds=duration_batch))
+    duration_per_batch = duration_total / i
+    time_end = now + duration_per_batch * (num_batches - i)
+    time_end_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time_end))
+    duration_estimate = time_end - since
+    duration_estimate_str = str(datetime.timedelta(seconds=duration_estimate))
+    duration_remaining = time_end - now
+    duration_remaining_str = str(datetime.timedelta(seconds=duration_remaining))
+    duration_enumerate_str = str(datetime.timedelta(seconds=duration_enumerate))
+    print(f'[epoch{epoch}] Processed batch: {i+1}/{num_batches}({100/num_batches*i}%). Duration: batch={duration_batch_str}, total={duration_total_str}, total(enum)={duration_enumerate_str}, estimate={duration_estimate_str}, remaining={duration_remaining_str}. Estimate end: {time_end_str}\r')
+    return now
+    
 for epoch in range(start_epoch, TOTAL_EPOCH + 1):
     exp_lr_scheduler.step()
     # train model
@@ -121,11 +137,12 @@ for epoch in range(start_epoch, TOTAL_EPOCH + 1):
 
     train_total_loss = 0.0
     total = 0
+    duration_enumerate = 0
     since = time.time()
+    previous_output = since
+    previous_end = since
     for i, data in enumerate(trainloader):
-        exp = 0
-        exp_str = '00:00:00'
-        t0 = time.time()
+        duration_enumerate += time.time() - previous_end
         img, label = data[0].cuda(), data[1].cuda()
         batch_size = img.size(0)
         optimizer_ft.zero_grad()
@@ -140,10 +157,8 @@ for epoch in range(start_epoch, TOTAL_EPOCH + 1):
         train_total_loss += total_loss.item() * batch_size
         total += batch_size
         if i % 200 == 0:
-            t1 = time.time()
-            exp = (t1 - t0) * (num_batches - i)
-            exp_str = str(datetime.timedelta(seconds=exp))
-            print(f'Processing Batch: {i+1}/{num_batches}. Remaining time for epoch{epoch} - {exp_str}\r')
+            previous_output = output_process(since, previous_output, epoch, i, duration_enumerate)
+        previous_end = time.time()
 
     train_total_loss = train_total_loss / total
     time_elapsed = time.time() - since
