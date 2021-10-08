@@ -87,3 +87,4 @@ class GLINT_Face(object):
 
     def __len__(self):
         return len(self.image_list)
+

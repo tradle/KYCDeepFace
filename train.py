@@ -21,6 +21,7 @@ from lfw_eval import parseList, evaluation_10_fold
 import numpy as np
 import scipy.io
 import math
+import psutil
 
 print('INFO:  init gpu')
 # gpu init
@@ -111,6 +112,7 @@ best_epoch = 0
 DATA_SIZE = len(trainset)   
 
 num_batches = math.ceil(DATA_SIZE / BATCH_SIZE)
+pid = os.getpid()
 
 def output_process (since, previous, epoch, i, duration_enumerate):
     now = time.time()
@@ -158,6 +160,7 @@ for epoch in range(start_epoch, TOTAL_EPOCH + 1):
         total += batch_size
         if i % 200 == 0:
             previous_output = output_process(since, previous_output, epoch, i, duration_enumerate)
+            _print(f'Memory usage: {psutil.Process(pid).memory_info().rss/1024**2} MB')
         previous_end = time.time()
 
     train_total_loss = train_total_loss / total
