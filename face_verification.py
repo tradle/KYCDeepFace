@@ -47,7 +47,7 @@ num_classes = len(class_names)
 model_path = DETECTION_FAST_MODEL_PATH
 det_net = create_Mb_Tiny_RFB_fd(len(class_names), is_test=True, device=device)
 det_predictor = create_Mb_Tiny_RFB_fd_predictor(det_net, candidate_size=DETECTION_CANDIDATE_SIZE, device=device)
-det_net.load(model_path)
+det_predictor.load(model_path)
 
 
 print("STATUS:    Loading RECOGNITION MODEL ...")
