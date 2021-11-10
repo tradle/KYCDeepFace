@@ -5,26 +5,15 @@
 # @Last Modified time: 2021-09-16 20:27:46
 
 import argparse
-import os
-import sys
 import cv2
-import json
 import time
 import torch
-import imageio
-import scipy.io
 import numpy as np
 import torch.utils.data
 from vision.ssd.config.fd_config import define_img_size
 from core import model as mfn
 from core.utils import *
-from landmark_detector import Detector as landmark_detector
-from mask_predictor import Detector as mask_detector
 from config import *
-import pickle
-from alignment import FaceAligner
-import uuid
-
 
 parser = argparse.ArgumentParser(description='Face Verification for KYC')
 parser.add_argument('-s', '--sample', type=str,
@@ -51,9 +40,8 @@ print(f"STATUS:    USING DEVICE: {device}")
 # load detection model
 print(f"STATUS:    LOADING DETECTION MODEL ...")
 define_img_size(DETECTION_INPUT_SIZE)  # must put define_img_size() before 'import create_mb_tiny_fd, create_mb_tiny_fd_predictor'
-from vision.ssd.mb_tiny_fd import create_mb_tiny_fd, create_mb_tiny_fd_predictor
+
 from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd, create_Mb_Tiny_RFB_fd_predictor
-from vision.utils.misc import Timer
 class_names = [name.strip() for name in open(DETECTION_LABEL).readlines()]
 num_classes = len(class_names)
 model_path = DETECTION_FAST_MODEL_PATH
