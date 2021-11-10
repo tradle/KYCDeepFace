@@ -45,7 +45,7 @@ from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd, create_Mb_Tiny_RFB_
 class_names = [name.strip() for name in open(DETECTION_LABEL).readlines()]
 num_classes = len(class_names)
 model_path = DETECTION_FAST_MODEL_PATH
-det_net = create_Mb_Tiny_RFB_fd(len(class_names), is_test=True, device=device)
+det_net = create_Mb_Tiny_RFB_fd(num_classes, is_test=True, device=device)
 det_predictor = create_Mb_Tiny_RFB_fd_predictor(det_net, candidate_size=DETECTION_CANDIDATE_SIZE, device=device)
 det_predictor.load(model_path)
 
@@ -57,29 +57,19 @@ normal_recog_net.load_state_dict(ckpt['net_state_dict'])
 normal_recog_net.eval()
 torch.no_grad()
 
+def process_image (img):
+    data = cv2.imread(img)
+    data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+    boxes, labels, probs = det_predictor.predict(data, DETECTION_CANDIDATE_SIZE / 2, DETECTION_THRESHOLD)
+    assert boxes.size(0) == 1, "multiple faces detected, please retake"
+    box = boxes[0,:]
+    x1, y1, x2, y2 = pos_box(box)
+    return img[y1:y2, x1:x2]
 
-img = cv2.imread(args.sample)
-tar = cv2.imread(args.target)
-
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-h, w, _ = img.shape
-boxes, labels, probs = det_predictor.predict(img, DETECTION_CANDIDATE_SIZE / 2, DETECTION_THRESHOLD)
-assert boxes.size(0) == 1, "multiple faces detected, please retake"
-
-tar = cv2.cvtColor(tar, cv2.COLOR_BGR2RGB)
-tar_boxes, tar_labels, tar_probs = det_predictor.predict(tar, DETECTION_CANDIDATE_SIZE / 2, DETECTION_THRESHOLD)
-
-
-box = boxes[0,:]
-x1, y1, x2, y2 = pos_box(box)
-img_crop = img[y1:y2, x1:x2]
-
-tar_box = tar_boxes[0,:]
-x1, y1, x2, y2 = pos_box(tar_box)
-tar_crop = tar[y1:y2, x1:x2]
-
-# flipped
-input_dataset = ImageData([tar_crop, img_crop])
+input_dataset = ImageData([
+    process_image(args.target),
+    process_image(args.sample)
+])
 images_loader = torch.utils.data.DataLoader(
     input_dataset,
     batch_size=32,
