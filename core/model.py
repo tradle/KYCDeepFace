@@ -54,10 +54,6 @@ class ConvBlock(nn.Module):
         else:
             return self.prelu(x)
 
-# t = expansion
-# s = stride
-# n = layer count
-# c = oup
 Mobilefacenet_bottleneck_setting = [
     # t, c , n ,s
     [2, 64, 5, 2],
@@ -86,7 +82,9 @@ class MobileFacenet(nn.Module):
 
         self.dw_conv1 = ConvBlock(64, 64, 3, 1, 1, dw=True)
 
-        self._make_layer(64, Bottleneck, bottleneck_setting)
+        self.inplanes = 64
+        block = Bottleneck
+        self.blocks = self._make_layer(block, bottleneck_setting)
 
         self.conv2 = ConvBlock(128, 512, 1, 1, 0)
 
@@ -102,17 +100,17 @@ class MobileFacenet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-    def _make_layer(self, init_c, block, setting):
+    def _make_layer(self, block, setting):
         layers = []
-        prev_c = init_c
         for t, c, n, s in setting:
             for i in range(n):
-                stride = s if i == 0 else 1
-                layers.append(block(prev_c, c, stride, t))
-                prev_c = c
+                if i == 0:
+                    layers.append(block(self.inplanes, c, s, t))
+                else:
+                    layers.append(block(self.inplanes, c, 1, t))
+                self.inplanes = c
 
-        self.inplanes = prev_c
-        self.blocks =nn.Sequential(*layers)
+        return nn.Sequential(*layers)
 
     def forward(self, x):
         x = self.conv1(x)
