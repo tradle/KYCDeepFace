@@ -2,7 +2,7 @@
 # @Author: yirui
 # @Date:   2021-09-13 15:42:15
 # @Last Modified by:   yirui
-# @Last Modified time: 2021-09-16 20:27:46
+# @Last Modified time: 2021-11-18 00:38:48
 
 import argparse
 import cv2
@@ -10,49 +10,62 @@ import time
 import torch
 import numpy as np
 import torch.utils.data
-from vision.ssd.config.fd_config import define_img_size
 from core import model as mfn
 from core.utils import *
 from config import *
+from mtcnn import MTCNN
+from mtcnn_alignment import FaceAligner
 
-parser = argparse.ArgumentParser(description='Face Verification for KYC')
-parser.add_argument('-s', '--sample', type=str,
-                    help='image file name for testing')
-parser.add_argument('-t', '--target', type=str,
-                    help='image file name used as target')
-parser.add_argument('--uid', type=str,
-                    help='user id reserved')
+using_gpu = False
+device = torch.device("cpu")
+
+parser = argparse.ArgumentParser(description='input for sample and target images')
+parser.add_argument('--target', type=str,
+                    help='test against target file')
+parser.add_argument('--sample', type=str,
+                    help='sample image to test')
 
 args = parser.parse_args()
 
-print("STATUS:    Loading models ...")
-print("STATUS:    Loading detection model ...")
-print(f"STATUS:    Mode: {DETECTION_MODEL_TYPE}")
-print(f"STATUS:    INPUT SIZE: {DETECTION_INPUT_SIZE}")
-print("STATUS:    CHECKING TEST DEVICE ...")
+# from vision.ssd.config.fd_config import ImageConfiguration
+# from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd, create_Mb_Tiny_RFB_fd_predictor
+# 
+# config = ImageConfiguration(
+#     # DETECTION_INPUT_SIZE
+#     320
+# )
+# class_names = [name.strip() for name in open(
+#     # DETECTION_LABEL
+#     './models/detection/labels.txt'
+# ).readlines()]
+# num_classes = len(class_names)
+# det_net = create_Mb_Tiny_RFB_fd(
+#     config,
+#     num_classes,
+#     is_test=True,
+#     device=device
+# )
+# det_predictor = create_Mb_Tiny_RFB_fd_predictor(
+#     config,
+#     det_net,
+#     # candidate_size=DETECTION_CANDIDATE_SIZE,
+#     candidate_size=1500,
+#     device=device
+# )
+# det_predictor.load(
+#     # DETECTION_FAST_MODEL_PATH
+#     "./models/detection/fast.pth"
+# )
 
-# cpu only
-using_gpu = False
-device = torch.device("cpu")
-print(f"STATUS:    USING DEVICE: {device}")
-
-
-# load detection model
-print(f"STATUS:    LOADING DETECTION MODEL ...")
-define_img_size(DETECTION_INPUT_SIZE)  # must put define_img_size() before 'import create_mb_tiny_fd, create_mb_tiny_fd_predictor'
-
-from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd, create_Mb_Tiny_RFB_fd_predictor
-class_names = [name.strip() for name in open(DETECTION_LABEL).readlines()]
-num_classes = len(class_names)
-model_path = DETECTION_FAST_MODEL_PATH
-det_net = create_Mb_Tiny_RFB_fd(num_classes, is_test=True, device=device)
-det_predictor = create_Mb_Tiny_RFB_fd_predictor(det_net, candidate_size=DETECTION_CANDIDATE_SIZE, device=device)
-det_predictor.load(model_path)
+det_predictor = MTCNN(weights_file=MTCNN_DETECTION_MODEL_PATH, min_face_size=MIN_FACE_SIZE)
 
 
 print("STATUS:    Loading RECOGNITION MODEL ...")
 normal_recog_net = mfn.MobileFacenet()
-ckpt = torch.load(RECOGNITION_NORMAL_MODEL_PATH, map_location=device)
+ckpt = torch.load(
+    # RECOGNITION_NORMAL_MODEL_PATH
+    './models/recognition/mfn.pth'
+, map_location=device)
 normal_recog_net.load_state_dict(ckpt['net_state_dict'])
 normal_recog_net.eval()
 torch.no_grad()
@@ -60,11 +73,13 @@ torch.no_grad()
 def process_image (img):
     data = cv2.imread(img)
     data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
-    boxes, labels, probs = det_predictor.predict(data, DETECTION_CANDIDATE_SIZE / 2, DETECTION_THRESHOLD)
-    assert boxes.size(0) == 1, "multiple faces detected, please retake"
-    box = boxes[0,:]
-    x1, y1, x2, y2 = pos_box(box)
-    return img[y1:y2, x1:x2]
+    # boxes, labels, probs = det_predictor.predict(data, DETECTION_CANDIDATE_SIZE / 2, DETECTION_THRESHOLD)
+    results = det_predictor.detect_faces(data)
+    assert len(results) == 1, "multiple faces detected, please retake"
+    box = results[0]['box']
+    x1, y1, x2, y2 = xywh_xyxy(box)
+    cropped = data[y1:y2, x1:x2]
+    return cropped
 
 input_dataset = ImageData([
     process_image(args.target),
@@ -72,23 +87,46 @@ input_dataset = ImageData([
 ])
 images_loader = torch.utils.data.DataLoader(
     input_dataset,
-    batch_size=32,
+    batch_size=2,
     shuffle=False,
     num_workers=0,
     drop_last=False)
 
-for data in images_loader:
-    res = []
-    t0 = time.time()
-    for d in data:
-        res.append(normal_recog_net(d).data.cpu().numpy())
-    features = np.concatenate((res[0], res[1]), 1)
-    features = features / np.expand_dims(np.sqrt(np.sum(np.power(features, 2), 1)), 1)
+featureLs = None
+featureRs = None
+
+for data in images_loader: # these are 2x2 images [[target, horz_flipped(target)], [sample, horz_flipped(sample)]]!
+    res = [normal_recog_net(d).data.cpu().numpy() for d in data]
+    print(len(res))
+
+    if featureLs is None:
+        featureLs = res[0]
+    else:
+        featureLs = np.concatenate((featureLs, res[0]), 0)
+    if featureRs is None:
+        featureRs = res[1]
+    else:
+        featureRs = np.concatenate((featureRs, res[1]), 0)
+
+# res[0] contain normal and flipped embedding for sample
+# res[1] contain normal and flipped embedding for target
+
+# features = np.concatenate((res[0], res[1]), 1)
+mu = np.mean(np.concatenate((featureLs, featureRs), 0), 0)
+mu = np.expand_dims(mu, 0)
+featureLs = featureLs - mu
+featureRs = featureRs - mu
+featureLs = featureLs / np.expand_dims(np.sqrt(np.sum(np.power(featureLs, 2), 1)), 1)
+featureRs = featureRs / np.expand_dims(np.sqrt(np.sum(np.power(featureRs, 2), 1)), 1)
+
+scores = np.sum(np.multiply(featureLs, featureRs), 1)
+# print(featureL.shape)
 
 
-scores = np.sum(np.multiply(np.array([features[0]]), np.array([features[1]])), 1)
+# scores = np.sum(np.multiply(featureL, featureR), 1)
 print(scores)
-if scores[0] < VERIFICATION_TRHESHOLD:
+
+if np.max(scores) < VERIFICATION_TRHESHOLD:
     print("identify not matched")
 else:
     print('identity matched')
