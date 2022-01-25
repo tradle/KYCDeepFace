@@ -1,0 +1,15 @@
+on:
+  push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+      - run: pip3 install -r requirements.txt
+      - run: python3 test.py
