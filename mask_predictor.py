@@ -25,7 +25,5 @@ class Detector:
         crop_image = np.array([np.transpose(crop_image, (2, 0, 1))])
         crop_image = torch.tensor(crop_image).float()
         with torch.no_grad():
-            start = time.time()
             raw = self.model(crop_image)[0].cpu().numpy()
-            end = time.time()
         return raw
