@@ -1,9 +1,7 @@
 import torch
 
-from ..utils import box_utils
-from .data_preprocessing import PredictionTransform
-# from ..utils.misc import Timer
-
+from vision.utils.box_utils import nms
+from vision.ssd.data_preprocessing import PredictionTransform
 
 class Predictor:
     def __init__(self, net, size, mean=0.0, std=1.0, nms_method=None,
@@ -57,7 +55,7 @@ class Predictor:
                 continue
             subset_boxes = boxes[mask, :]
             box_probs = torch.cat([subset_boxes, probs.reshape(-1, 1)], dim=1)
-            box_probs = box_utils.nms(box_probs, self.nms_method,
+            box_probs = nms(box_probs, self.nms_method,
                                       score_threshold=prob_threshold,
                                       iou_threshold=self.iou_threshold,
                                       sigma=self.sigma,

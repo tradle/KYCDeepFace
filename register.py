@@ -15,14 +15,13 @@ import imageio
 import scipy.io
 import numpy as np
 import torch.utils.data
-from vision.ssd.config.fd_config import define_img_size
 from core import model as mfn
 from core.utils import *
 from config import *
 
 from wear_mask import FaceMasker
 from alignment import FaceAligner
-from landmark_detector import Detector as landmark_detector
+from vision.landmark_detector import Detector as landmark_detector
 
 print("STATUS:    Loading models ...")
 print("STATUS:    Loading detection model ...")
@@ -51,8 +50,8 @@ print(f"STATUS:    INITIATE FACE ALIGNER")
 fa = FaceAligner(desiredLeftEye=DESIRED_LEFT_EYE_LOC, desiredFaceWidth=FACE_SIZE)
 
 # load detection model
-define_img_size(DETECTION_INPUT_SIZE)  # must put define_img_size() before 'import create_mb_tiny_fd, create_mb_tiny_fd_predictor'
-from vision.ssd.mb_tiny_fd import create_mb_tiny_fd, create_mb_tiny_fd_predictor
+from vision.ssd.config.fd_config import ImageConfiguration
+config = ImageConfiguration(DETECTION_INPUT_SIZE)
 from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd, create_Mb_Tiny_RFB_fd_predictor
 from vision.utils.misc import Timer
 class_names = [name.strip() for name in open(DETECTION_LABEL).readlines()]
@@ -66,12 +65,12 @@ elif DETECTION_MODEL_TYPE == "hybrid":
 else:
     print("The model type is wrong!")
     sys.exit(1)
-det_net = create_Mb_Tiny_RFB_fd(len(class_names), is_test=True, device=TEST_DEVICE)
-det_predictor = create_Mb_Tiny_RFB_fd_predictor(det_net, candidate_size=DETECTION_CANDIDATE_SIZE, device=TEST_DEVICE)
+det_net = create_Mb_Tiny_RFB_fd(config, len(class_names), is_test=True, device=TEST_DEVICE)
+det_predictor = create_Mb_Tiny_RFB_fd_predictor(config, det_net, candidate_size=DETECTION_CANDIDATE_SIZE, device=TEST_DEVICE)
 det_net.load(model_path)
 
 print("STATUS:    Loading landmark model ...")
-landmark_predictor = landmark_detector(test_device=device)
+landmark_predictor = landmark_detector(model_path=LANDMARKS_MODEL_PATH, test_device=device)
 
 # load recognition model
 print("STATUS:    Loading normal recognition model ...")

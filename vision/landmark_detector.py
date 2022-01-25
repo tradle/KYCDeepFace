@@ -5,17 +5,17 @@
 # @Last Modified time: 2021-09-01 17:42:08
 import torch
 import cv2
+from core.face_landmarks import FaceLandmarks
 from core.slim import Slim
 import numpy as np
 # from tracker import Tracker
-from core.headpose import get_head_pose
 import time
 
 
 class Detector:
-    def __init__(self, detection_size=(160, 160), test_device="cpu"):
+    def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
         self.model = Slim()
-        self.model.load_state_dict(torch.load(open("models/detection/landmarks.pth", "rb"), map_location=test_device))
+        self.model.load_state_dict(torch.load(open(model_path, "rb"), map_location=test_device))
         self.model.eval()
         # self.model.cuda()
         # self.tracker = Tracker()
@@ -52,6 +52,5 @@ class Detector:
             landmark = raw[0:136].reshape((-1, 2))
         landmark[:, 0] = landmark[:, 0] * detail[1] + detail[3]
         landmark[:, 1] = landmark[:, 1] * detail[0] + detail[2]
-        # landmark = self.tracker.track(img, landmark)
-        _, PRY_3d = get_head_pose(landmark, img)
-        return landmark, PRY_3d[:, 0]
+        h, w, _ = img.shape
+        return FaceLandmarks(landmark, (w, h), bbox)

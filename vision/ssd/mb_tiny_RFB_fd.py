@@ -1,7 +1,7 @@
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU
 
 from vision.nn.mb_tiny_RFB import Mb_Tiny_RFB
-from vision.ssd.config import fd_config as config
+from vision.ssd.config.fd_config import ImageConfiguration
 from vision.ssd.predictor import Predictor
 from vision.ssd.ssd import SSD
 
@@ -17,7 +17,7 @@ def SeperableConv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=
     )
 
 
-def create_Mb_Tiny_RFB_fd(num_classes, is_test=False, device="cuda"):
+def create_Mb_Tiny_RFB_fd(config, num_classes, is_test=False, device="cuda"):
     base_net = Mb_Tiny_RFB(2)
     base_net_model = base_net.model  # disable dropout layer
 
@@ -53,8 +53,8 @@ def create_Mb_Tiny_RFB_fd(num_classes, is_test=False, device="cuda"):
                extras, classification_headers, regression_headers, is_test=is_test, config=config, device=device)
 
 
-def create_Mb_Tiny_RFB_fd_predictor(net, candidate_size=200, nms_method=None, sigma=0.5, device=None):
-    predictor = Predictor(net, config.image_size, config.image_mean_test,
+def create_Mb_Tiny_RFB_fd_predictor(config: ImageConfiguration, net, candidate_size=200, nms_method=None, sigma=0.5, device=None):
+    predictor = Predictor(net, config.image_size, config.image_mean,
                           config.image_std,
                           nms_method=nms_method,
                           iou_threshold=config.iou_threshold,

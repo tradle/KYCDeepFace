@@ -9,13 +9,11 @@ import cv2
 import torch.onnx
 from config import *
 from vision.ssd.data_preprocessing import PredictionTransform
-from vision.ssd.config.fd_config import define_img_size
 # input_size = 320
 input_size = 640
-define_img_size(input_size)
 # from vision.ssd.mb_tiny_fd import create_mb_tiny_fd, create_mb_tiny_fd_predictor
-from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd, create_Mb_Tiny_RFB_fd_predictor
-from vision.ssd.config import fd_config
+from vision.ssd.mb_tiny_RFB_fd import create_Mb_Tiny_RFB_fd
+from vision.ssd.config.fd_config import ImageConfiguration
 
 if DETECTION_MODEL_TYPE == "fast":
     model_path = DETECTION_FAST_MODEL_PATH
@@ -28,7 +26,8 @@ elif DETECTION_MODEL_TYPE == "hybrid":
     output_path = f"models/detection/hybrid_{input_size}.onnx"
 
 class_names = [name.strip() for name in open(DETECTION_LABEL).readlines()]
-det_net = create_Mb_Tiny_RFB_fd(len(class_names), is_test=True, device=torch.device("cpu"))
+config = ImageConfiguration(input_size)
+det_net = create_Mb_Tiny_RFB_fd(config, len(class_names), is_test=True, device=torch.device("cpu"))
 det_net.load(model_path)
 det_net.eval()
 
@@ -40,7 +39,7 @@ torch.onnx.export(det_net, dummy_input, output_path, verbose=False, input_names=
 # image = cv2.imread('test/testing_img.jpg')
 # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-# transform = PredictionTransform(fd_config.image_size, fd_config.image_mean_test,fd_config.image_std)
+# transform = PredictionTransform(config.image_size, config.image_mean, config.image_std)
 # image = transform(image)
 # images = image.unsqueeze(0)
 
