@@ -44,6 +44,14 @@ def main ():
 def quiet ():
     return
 
+def hash (f):
+    import hashlib
+    hasher = hashlib.sha1()
+    with open(f, 'rb') as afile:
+        buf = afile.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
+
 def mobile_facenet_impl (args):
     from core.model import MobileFacenet
     import torch
@@ -64,8 +72,10 @@ def export (args, net, output):
         input_names  = ['input'],
         output_names = [args.out_name]
     )
+    return hash(output)
 
 def run (args):
+    import os
     out = quiet if args.quiet else print
 
     out('Loading torch model from %s' % args.input)
@@ -75,7 +85,21 @@ def run (args):
 
     out('Exporting onnx model to %s' % args.output)
     
-    export(args, impl, args.output)
+    out_hash = export(args, impl, args.output)
+
+    verify_output = '%s.verify' % args.output
+
+    out('Exporting verify onnx model to %s' % verify_output)
+
+    verify_hash = export(args, impl, verify_output)
+
+    out('Verifying the output.')
+
+    assert out_hash == verify_hash, 'Verification failed, it seems to be a dynamic model!\n  %s != %s' % (out_hash, verify_hash)
+
+    out('Cleaning up verify onnx model %s' % verify_output)
+
+    os.unlink(verify_output)
 
     out('Done.')
 
