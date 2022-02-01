@@ -15,11 +15,16 @@ def main ():
     )
     parser.add_argument('-i', '--input',    type = str,  required = True, help = 'input file path')
     parser.add_argument('-o', '--output',   type = str,  required = False, help = 'output file path, defaults to same as input with .onnx ending')
+    parser.add_argument('-t', '--type',     type = str,  required = True, help = 'supported model type (mfn = MobileFacenet, slim = Slim (Landmarks))')
     parser.add_argument('-d', '--device',   type = str,  default = DEFAULT_DEVICE, help = 'pytorch device, see: https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device')
     parser.add_argument('-q', '--quiet',    type = bool, default = False, help = 'skip default output')
     parser.add_argument('-n', '--no-check', type = bool, default = False, help = 'do not check for file name extensions')
     parser.add_argument('-m', '--out-name', type = str,  default = DEFAULT_OUT_NAME, help = 'Output nme for for the onnx model')
     args = parser.parse_args()
+
+    if not (args.type == 'mfn' or args.type == 'slim'):
+        print('Error: Model type needs to be either mfn or slim')
+        exit(1)
 
     if args.input == args.output:
         print('Error: Input needs to be different from output. (%s)' % args.input)
@@ -61,6 +66,15 @@ def mobile_facenet_impl (args):
     net.eval()
     return net
 
+def landmarks_impl (args):
+    from core.slim import Slim
+    import torch
+    state_dict = torch.load(args.input, map_location=args.device)
+    net = Slim()
+    net.load_state_dict(state_dict)
+    net.eval()
+    return net
+
 def export (args, net, output):
     import torch
     torch.onnx.export(
@@ -74,12 +88,18 @@ def export (args, net, output):
     )
     return hash(output)
 
+def get_impl (args):
+    if args.type == 'mfn':
+        return mobile_facenet_impl(args)
+    if args.type == 'slim':
+        return landmarks_impl(args)
+
 def run (args):
     import os
     out = quiet if args.quiet else print
 
     out('Loading torch model from %s' % args.input)
-    impl = mobile_facenet_impl(args)
+    impl = get_impl(args)
 
     out(impl)
 
