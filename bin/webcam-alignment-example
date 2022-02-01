@@ -1,0 +1,5 @@
+#!/bin/bash
+
+DIR="$(pwd)/$(dirname $0)/.."
+cd $DIR
+python3 -m bin.webcam-alignment-example $@
