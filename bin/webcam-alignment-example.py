@@ -37,7 +37,7 @@ class FaceState:
 
         self.active = True
         self.embedding = embedding
-        self.id = f'face#{global_face_index} ({random.randbytes(6).hex()})'
+        self.id = f'face#{global_face_index} ({hex(random.getrandbits(6 * 8))})'
 
 def activate_face(face, faces, threshold=0.5):
     _, __, embeddings = face
