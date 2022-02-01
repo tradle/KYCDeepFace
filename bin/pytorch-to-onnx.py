@@ -7,6 +7,9 @@ from core.credits import slim as epilog
 
 DEFAULT_DEVICE = 'cpu'
 DEFAULT_OUT_NAME = 'output'
+TYPES = [
+    'mfn', 'slim', 'slim_mask'
+]
 
 def main ():
     parser = argparse.ArgumentParser(
@@ -15,15 +18,15 @@ def main ():
     )
     parser.add_argument('-i', '--input',    type = str,  required = True, help = 'input file path')
     parser.add_argument('-o', '--output',   type = str,  required = False, help = 'output file path, defaults to same as input with .onnx ending')
-    parser.add_argument('-t', '--type',     type = str,  required = True, help = 'supported model type (mfn = MobileFacenet, slim = Slim (Landmarks))')
+    parser.add_argument('-t', '--type',     type = str,  required = True, help = 'supported model type: %s' % TYPES)
     parser.add_argument('-d', '--device',   type = str,  default = DEFAULT_DEVICE, help = 'pytorch device, see: https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device')
     parser.add_argument('-q', '--quiet',    type = bool, default = False, help = 'skip default output')
     parser.add_argument('-n', '--no-check', type = bool, default = False, help = 'do not check for file name extensions')
     parser.add_argument('-m', '--out-name', type = str,  default = DEFAULT_OUT_NAME, help = 'Output nme for for the onnx model')
     args = parser.parse_args()
 
-    if not (args.type == 'mfn' or args.type == 'slim'):
-        print('Error: Model type needs to be either mfn or slim')
+    if not args.type in TYPES:
+        print('Error: Model type needs to be: %s' % TYPES)
         exit(1)
 
     if args.input == args.output:
@@ -66,8 +69,17 @@ def mobile_facenet_impl (args):
     net.eval()
     return net
 
-def landmarks_impl (args):
+def slim_impl (args):
     from core.slim import Slim
+    import torch
+    state_dict = torch.load(args.input, map_location=args.device)
+    net = Slim()
+    net.load_state_dict(state_dict)
+    net.eval()
+    return net
+
+def slim_mask_impl (args):
+    from core.mask_slim import Slim
     import torch
     state_dict = torch.load(args.input, map_location=args.device)
     net = Slim()
@@ -92,7 +104,9 @@ def get_impl (args):
     if args.type == 'mfn':
         return mobile_facenet_impl(args)
     if args.type == 'slim':
-        return landmarks_impl(args)
+        return slim_impl(args)
+    if args.type == 'slim_mask':
+        return slim_mask_impl(args)
 
 def run (args):
     import os
