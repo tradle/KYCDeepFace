@@ -8,17 +8,12 @@ import cv2
 from core.face_landmarks import FaceLandmarks
 from core.slim import Slim
 import numpy as np
-# from tracker import Tracker
-import time
-
 
 class Detector:
     def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
         self.model = Slim()
         self.model.load_state_dict(torch.load(open(model_path, "rb"), map_location=test_device))
         self.model.eval()
-        # self.model.cuda()
-        # self.tracker = Tracker()
         self.detection_size = detection_size
 
     def crop_image(self, orig, bbox):
@@ -43,12 +38,9 @@ class Detector:
         crop_image, detail = self.crop_image(img, bbox)
         crop_image = (crop_image - 127.0) / 127.0
         crop_image = np.array([np.transpose(crop_image, (2, 0, 1))])
-        crop_image = torch.tensor(crop_image).float()#.cuda()
+        crop_image = torch.tensor(crop_image).float()
         with torch.no_grad():
-            start = time.time()
             raw = self.model(crop_image)[0].cpu().numpy()
-            end = time.time()
-            # print("PyTorch Inference Time: {:.6f}".format(end - start))
             landmark = raw[0:136].reshape((-1, 2))
         landmark[:, 0] = landmark[:, 0] * detail[1] + detail[3]
         landmark[:, 1] = landmark[:, 1] * detail[0] + detail[2]
