@@ -17,7 +17,7 @@ def load_s3_unsigned ():
     else:
         return boto3.client('s3')
 
-_s3 = lazy(lambda: load_s3_unsigned)
+_s3 = lazy(load_s3_unsigned)
 
 def image_from_urlsafe_base64 (image):
     return io.BytesIO(urlsafe_b64decode(image))
