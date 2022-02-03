@@ -8,13 +8,12 @@ import cv2
 from core.face_landmarks import FaceLandmarks
 from core.slim import Slim
 import numpy as np
+import onnxruntime as ort
 
 class PytorchDetector:
     def __init__(self, model_path, test_device):
         self.model = Slim()
-        model = open(model_path, "rb")
-        self.model.load_state_dict(torch.load(model, map_location=test_device))
-        model.close()
+        self.model.load_state_dict(torch.load(model_path, map_location=test_device))
         self.model.eval()
     
     def detect(self, crop_image):
@@ -23,10 +22,22 @@ class PytorchDetector:
             raw = self.model(crop_image)[0].cpu().numpy()
         return raw
 
+class OnnxDetector:
+    def __init__(self, model_path):
+        self.session = ort.InferenceSession(model_path)
+    
+    def detect(self, crop_image):
+        crop_image = crop_image.astype('float32')
+        result = self.session.run(None, { 'input': crop_image })[0]
+        return result[0]
+
 class Detector:
     def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
         self.detection_size = detection_size
-        self.detector = PytorchDetector(model_path, test_device)
+        if model_path[-5:] == '.onnx':
+            self.detector = OnnxDetector(model_path)
+        else:
+            self.detector = PytorchDetector(model_path, test_device)
 
     def crop_image(self, orig, bbox):
         bbox = bbox.copy()

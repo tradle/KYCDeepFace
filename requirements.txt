@@ -13,3 +13,5 @@ wheel==0.37.0
 torch==1.6.0
 torchvision==0.7.0
 requests==2.27.1
+onnx==1.10.2
+onnxruntime==1.10.0

@@ -8,9 +8,9 @@ def float_rounded (input, ndigits=2):
 def format_point (x, y, ndigits=2):
     return [round(float(x), ndigits), round(float(y), ndigits)]
 
-def format_points (coords):
+def format_points (coords, ndigits=2):
     for coord in coords:
-        yield format_point(coord[0], coord[1])
+        yield format_point(coord[0], coord[1], ndigits)
 
 T = TypeVar('T')
 TGenerator = TypeVar('TGenerator', Generator, object)

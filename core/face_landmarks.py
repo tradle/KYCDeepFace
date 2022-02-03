@@ -134,23 +134,23 @@ class FaceLandmarks(PointGroup):
         # TODO: how do we use reprojectdst? Is it of any value?
         return reprojectdst, [pitch, yaw, roll]
 
-def format_landmarks(landmarks: FaceLandmarks):
+def format_landmarks(landmarks: FaceLandmarks, ndigits=2):
     box = landmarks.bbox
     pitch, yaw, roll = landmarks.angle
     return {
         'bounds': {
-            'topLeft': format_point(box[0], box[1]),
-            'bottomRight': format_point(box[2], box[3])
+            'topLeft': format_point(box[0], box[1], ndigits),
+            'bottomRight': format_point(box[2], box[3], ndigits)
         },
         'landmarks': {
-            'outline': list(format_points(landmarks.outline)),
-            'left_brows': list(format_points(landmarks.left_brows)),
-            'right_brows': list(format_points(landmarks.right_brows)),
-            'nose_back': list(format_points(landmarks.nose_back)),
-            'nostrils': list(format_points(landmarks.nostrils)),
-            'left_eye': list(format_points(landmarks.left_eye)),
-            'right_eye': list(format_points(landmarks.right_eye)),
-            'mouth': list(format_points(landmarks.mouth)),
+            'outline': list(format_points(landmarks.outline, ndigits)),
+            'left_brows': list(format_points(landmarks.left_brows, ndigits)),
+            'right_brows': list(format_points(landmarks.right_brows, ndigits)),
+            'nose_back': list(format_points(landmarks.nose_back, ndigits)),
+            'nostrils': list(format_points(landmarks.nostrils, ndigits)),
+            'left_eye': list(format_points(landmarks.left_eye, ndigits)),
+            'right_eye': list(format_points(landmarks.right_eye, ndigits)),
+            'mouth': list(format_points(landmarks.mouth, ndigits)),
         },
         'angles': {
             'pitch': float_rounded(pitch, 3),
