@@ -9,14 +9,24 @@ from core.face_landmarks import FaceLandmarks
 from core.slim import Slim
 import numpy as np
 
-class Detector:
-    def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
+class PytorchDetector:
+    def __init__(self, model_path, test_device):
         self.model = Slim()
         model = open(model_path, "rb")
         self.model.load_state_dict(torch.load(model, map_location=test_device))
         model.close()
         self.model.eval()
+    
+    def detect(self, crop_image):
+        crop_image = torch.tensor(crop_image).float()
+        with torch.no_grad():
+            raw = self.model(crop_image)[0].cpu().numpy()
+        return raw
+
+class Detector:
+    def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
         self.detection_size = detection_size
+        self.detector = PytorchDetector(model_path, test_device)
 
     def crop_image(self, orig, bbox):
         bbox = bbox.copy()
@@ -40,10 +50,8 @@ class Detector:
         crop_image, detail = self.crop_image(img, bbox)
         crop_image = (crop_image - 127.0) / 127.0
         crop_image = np.array([np.transpose(crop_image, (2, 0, 1))])
-        crop_image = torch.tensor(crop_image).float()
-        with torch.no_grad():
-            raw = self.model(crop_image)[0].cpu().numpy()
-            landmark = raw[0:136].reshape((-1, 2))
+        landmark = self.detector.detect(crop_image)
+        landmark = landmark[0:136].reshape((-1, 2))
         landmark[:, 0] = landmark[:, 0] * detail[1] + detail[3]
         landmark[:, 1] = landmark[:, 1] * detail[0] + detail[2]
         h, w, _ = img.shape
