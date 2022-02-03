@@ -1,0 +1,1 @@
+slim = 'by Tradle Inc. - https://tradle.io - https://github.com/tradle/KYCDeepFace'

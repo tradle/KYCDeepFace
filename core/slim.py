@@ -53,6 +53,9 @@ class Slim(nn.Module):
         self.conv13 = conv_dw(256, 256, 1)
 
         self.fc = nn.Linear(448, 143)
+    
+    def random_input(self):
+        return torch.randn(1,3,160,160)
 
     def forward(self, inputs):
         x1 = self.conv1(inputs)
@@ -81,6 +84,6 @@ class Slim(nn.Module):
 if __name__ == '__main__':
     model = Slim()
     model.eval()
-    x = torch.randn(1, 3, 160, 160)
+    x = model.random_input()
     # flops, params = profile(model, inputs=(x,))
     # print(flops)

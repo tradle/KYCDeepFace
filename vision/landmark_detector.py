@@ -5,21 +5,39 @@
 # @Last Modified time: 2021-09-01 17:42:08
 import torch
 import cv2
+from core.face_landmarks import FaceLandmarks
 from core.slim import Slim
 import numpy as np
-# from tracker import Tracker
-from core.headpose import get_head_pose
-import time
+import onnxruntime as ort
 
+class PytorchDetector:
+    def __init__(self, model_path, test_device):
+        self.model = Slim()
+        self.model.load_state_dict(torch.load(model_path, map_location=test_device))
+        self.model.eval()
+    
+    def detect(self, crop_image):
+        crop_image = torch.tensor(crop_image).float()
+        with torch.no_grad():
+            raw = self.model(crop_image)[0].cpu().numpy()
+        return raw
+
+class OnnxDetector:
+    def __init__(self, model_path):
+        self.session = ort.InferenceSession(model_path)
+    
+    def detect(self, crop_image):
+        crop_image = crop_image.astype('float32')
+        result = self.session.run(None, { 'input': crop_image })[0]
+        return result[0]
 
 class Detector:
-    def __init__(self, detection_size=(160, 160), test_device="cpu"):
-        self.model = Slim()
-        self.model.load_state_dict(torch.load(open("models/detection/landmarks.pth", "rb"), map_location=test_device))
-        self.model.eval()
-        # self.model.cuda()
-        # self.tracker = Tracker()
+    def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
         self.detection_size = detection_size
+        if model_path[-5:] == '.onnx':
+            self.detector = OnnxDetector(model_path)
+        else:
+            self.detector = PytorchDetector(model_path, test_device)
 
     def crop_image(self, orig, bbox):
         bbox = bbox.copy()
@@ -33,7 +51,7 @@ class Detector:
         bbox[1] = max(0, center[1] - face_height // 2)
         bbox[2] = min(image.shape[1], center[0] + face_width // 2)
         bbox[3] = min(image.shape[0], center[1] + face_height // 2)
-        bbox = bbox.astype(np.int)
+        bbox = bbox.astype(np.int32)
         crop_image = image[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
         h, w, _ = crop_image.shape
         crop_image = cv2.resize(crop_image, self.detection_size)
@@ -43,15 +61,9 @@ class Detector:
         crop_image, detail = self.crop_image(img, bbox)
         crop_image = (crop_image - 127.0) / 127.0
         crop_image = np.array([np.transpose(crop_image, (2, 0, 1))])
-        crop_image = torch.tensor(crop_image).float()#.cuda()
-        with torch.no_grad():
-            start = time.time()
-            raw = self.model(crop_image)[0].cpu().numpy()
-            end = time.time()
-            # print("PyTorch Inference Time: {:.6f}".format(end - start))
-            landmark = raw[0:136].reshape((-1, 2))
+        landmark = self.detector.detect(crop_image)
+        landmark = landmark[0:136].reshape((-1, 2))
         landmark[:, 0] = landmark[:, 0] * detail[1] + detail[3]
         landmark[:, 1] = landmark[:, 1] * detail[0] + detail[2]
-        # landmark = self.tracker.track(img, landmark)
-        _, PRY_3d = get_head_pose(landmark, img)
-        return landmark, PRY_3d[:, 0]
+        h, w, _ = img.shape
+        return FaceLandmarks(landmark, (w, h), bbox)

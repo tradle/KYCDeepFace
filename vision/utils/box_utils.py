@@ -2,33 +2,6 @@ import math
 
 import torch
 
-
-def generate_priors(feature_map_list, shrinkage_list, image_size, min_boxes, clamp=True) -> torch.Tensor:
-    priors = []
-    for index in range(0, len(feature_map_list[0])):
-        scale_w = image_size[0] / shrinkage_list[0][index]
-        scale_h = image_size[1] / shrinkage_list[1][index]
-        for j in range(0, feature_map_list[1][index]):
-            for i in range(0, feature_map_list[0][index]):
-                x_center = (i + 0.5) / scale_w
-                y_center = (j + 0.5) / scale_h
-
-                for min_box in min_boxes[index]:
-                    w = min_box / image_size[0]
-                    h = min_box / image_size[1]
-                    priors.append([
-                        x_center,
-                        y_center,
-                        w,
-                        h
-                    ])
-    # print("priors nums:{}".format(len(priors)))
-    priors = torch.tensor(priors)
-    if clamp:
-        torch.clamp(priors, 0.0, 1.0, out=priors)
-    return priors
-
-
 def convert_locations_to_boxes(locations, priors, center_variance,
                                size_variance):
     """Convert regressional location results of SSD into boxes in the form of (center_x, center_y, h, w).

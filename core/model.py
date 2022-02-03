@@ -100,6 +100,9 @@ class MobileFacenet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
+    def random_input(self):
+        return torch.randn(1, 3, 112, 96)
+
     def _make_layer(self, block, setting):
         layers = []
         for t, c, n, s in setting:

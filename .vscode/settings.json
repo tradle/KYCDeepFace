@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": "python3",
+  "editor.detectIndentation": false,
+  "editor.tabSize": 4
+}

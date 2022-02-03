@@ -54,6 +54,9 @@ class Slim(nn.Module):
 
         self.fc = nn.Linear(448, 2)
 
+    def random_input(self):
+        return torch.randn(1,3,64,64)
+
     def freeze(self):
         n = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6,
              self.conv7, self.conv8, self.conv9, self.conv10, self.conv11, self.conv12,
