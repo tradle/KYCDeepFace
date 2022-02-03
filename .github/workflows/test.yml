@@ -16,7 +16,7 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ hashFiles('requirements.txt') }}
-      - run: pip3 install -r requirements.txt -e .
+      - run: pip3 install -r requirements.txt
       - run: python3 test.py
         env:
           UNSIGNED_AWS: 'true'
