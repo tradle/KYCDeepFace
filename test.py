@@ -4,6 +4,7 @@ from core.face_landmarks_test import FaceLandmarkTest
 from vision.ssd.config.fd_config_test import ImageConfigurationTest
 from vision.utils.geom_test import GeomTest
 from vision.utils.lang_test import LazyTest, LangTest
+from vision.utils.image_loader_test import ImageLoaderTest
 
 suite = TestSuite()
 suite.addTests(map(makeSuite, [
@@ -12,6 +13,7 @@ suite.addTests(map(makeSuite, [
     LangTest,
     GeomTest,
     FaceLandmarkTest,
+    ImageLoaderTest,
 ]))
 
 if __name__ == '__main__':
