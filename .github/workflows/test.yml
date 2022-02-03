@@ -1,3 +1,5 @@
+name: CI
+
 on:
   push
 
@@ -20,3 +22,24 @@ jobs:
       - run: python3 test.py
         env:
           UNSIGNED_AWS: 'true'
+
+  deployment:
+    name: Deploy to AWS ECR
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: public.ecr.aws
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - run: |
+          docker build \
+            -t kycdeepface:latest \
+            -t public.ecr.aws/h7s8u8m7/kycdeepface:latest \
+            -t kycdeepface:${GITHUB_SHA} \
+            -t public.ecr.aws/h7s8u8m7/kycdeepface:${GITHUB_SHA} \
+            .
+          docker push public.ecr.aws/h7s8u8m7/kycdeepface:latest
