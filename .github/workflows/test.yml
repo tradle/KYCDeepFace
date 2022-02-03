@@ -13,3 +13,5 @@ jobs:
           architecture: 'x64'
       - run: pip3 install -r requirements.txt
       - run: python3 test.py
+        env:
+          UNSIGNED_AWS: 'true'

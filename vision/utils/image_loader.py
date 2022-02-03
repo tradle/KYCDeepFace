@@ -1,5 +1,4 @@
 import io
-import boto3
 import requests
 
 from base64 import urlsafe_b64decode
@@ -7,7 +6,18 @@ from imageio import imread
 
 from vision.utils.lang import lazy
 
-_s3 = lazy(lambda: boto3.client('s3'))
+def load_s3_unsigned ():
+    import boto3
+    from os import environ
+
+    if 'UNSIGNED_AWS' in environ and environ['UNSIGNED_AWS'] == 'true':
+        from botocore import UNSIGNED
+        from botocore.client import Config
+        return boto3.client('s3', config=Config(signature_version=UNSIGNED))
+    else:
+        return boto3.client('s3')
+
+_s3 = lazy(lambda: load_s3_unsigned)
 
 def image_from_urlsafe_base64 (image):
     return io.BytesIO(urlsafe_b64decode(image))
