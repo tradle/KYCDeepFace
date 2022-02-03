@@ -16,7 +16,7 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ hashFiles('requirements.txt') }}
-      - run: pip3 --upgrade --upgrade-strategy eager install -r requirements.txt -e .
+      - run: pip3 install -r requirements.txt -e .
       - run: python3 test.py
         env:
           UNSIGNED_AWS: 'true'
