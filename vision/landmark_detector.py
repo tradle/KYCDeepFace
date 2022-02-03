@@ -12,7 +12,9 @@ import numpy as np
 class Detector:
     def __init__(self, model_path, detection_size=(160, 160), test_device="cpu"):
         self.model = Slim()
-        self.model.load_state_dict(torch.load(open(model_path, "rb"), map_location=test_device))
+        model = open(model_path, "rb")
+        self.model.load_state_dict(torch.load(model, map_location=test_device))
+        model.close()
         self.model.eval()
         self.detection_size = detection_size
 
@@ -28,7 +30,7 @@ class Detector:
         bbox[1] = max(0, center[1] - face_height // 2)
         bbox[2] = min(image.shape[1], center[0] + face_width // 2)
         bbox[3] = min(image.shape[0], center[1] + face_height // 2)
-        bbox = bbox.astype(np.int)
+        bbox = bbox.astype(np.int32)
         crop_image = image[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
         h, w, _ = crop_image.shape
         crop_image = cv2.resize(crop_image, self.detection_size)
